@@ -2,7 +2,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var { querySelectCustomerByID } = require('./db/mssql');
 var customerController = require('./controllers/customer');
-var authenticateController = require('./controllers/authenticate');
 var setting = require('./../settings');
 //var {insertCustomer, getCustomerByEmail} = require('./controllers/customer');
 var _ = require('lodash');
@@ -18,7 +17,7 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use('/secure-api', secureRoutes);
 
-//Post insert customer
+//Public sign up api
 app.post('/api/customer', customerController.insertCustomer);
 
 //app.get('/api/authenticate', authenticateController.authenticate);
@@ -26,7 +25,7 @@ app.get('/api/customer/:customerEmail', customerController.getCustomer);
 
 //Validation Middleware
 secureRoutes.use(function(req, res, next){
-    var token = req.body.token || req.headers['token'];    
+    var token = req.headers['x-auth'];
     if(token){
         jwt.verify(token, setting.tokenpassword, (err, decode) => {
             if(!err){
