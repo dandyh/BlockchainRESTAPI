@@ -40,7 +40,25 @@ function querySelectCustomerByID(custId, callback) {
                 callback(null, err);
             }).Run(); 
     }).catch(function (ex) { 
-        callback(null, err);
+        callback(null, ex);
+    }); 
+} 
+
+function querySelectCustomerByEmail(custEmail, callback) { 
+    const query = "select * from BCCustomer where Email = @Email"
+    var con = new msSqlConnecter.msSqlConnecter(dbconfig); 
+    con.connect().then(function () { 
+        new con.Request(query) 
+            .addParam("Email", TYPES.VarChar, custEmail)
+            .onComplate(function (count, datas) { 
+                if (callback) 
+                    callback(datas); 
+            }) 
+            .onError(function (err) { 
+                callback(null, err);
+            }).Run(); 
+    }).catch(function (ex) { 
+        callback(null, ex);
     }); 
 } 
 
@@ -124,22 +142,9 @@ module.exports = {
     connection,
     queryInsertCustomer,
     querySelectCustomerByID,
+    querySelectCustomerByEmail,
     queryInsert,
     queryUpdate,
     queryDelete,
     queryAll
 }
-
-
-//Example
-//var qr = "insert into BCCustomer values('dandy@centrica.com', 'dandy', 'public key 1', 'private key 1')";
-//var qr = "delete from BCCustomer where CustomerID =4;"
-// var qr = "update BCCustomer set email='dandy@britishgas.co.uk' where customerid = 5"
-// queryUpdate(qr, (data, err)=>{
-//     if(!err){
-//         console.log(data);
-//     } else {
-//         console.log(err);
-//     }
-    
-// })

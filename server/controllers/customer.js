@@ -1,16 +1,35 @@
-var { queryInsertCustomer, querySelectCustomerByID, queryInsert, queryUpdate, queryDelete, queryAll } = require('../db/mssql');
+var { queryInsertCustomer, querySelectCustomerByEmail, queryAll } = require('../db/mssql');
+var {CleanJSONObject} = require('../helper/commonFunction');
+var {hashText, generateCustomerKeys} = require('../helper/ethereumHelper');
+var validator = require('validator');
 
-function InsertCustomer(customer) {
-    queryInsertCustomer(customer, (data, err) => {
+var insertCustomer = (customerObject, callback) => {
+    var obj = CleanJSONObject(customerObject);    
+
+    //verify whether the email is valid
+    if(!validator.isEmail(obj.email)){
+        return callback("Invalid email format");
+    }
+
+    //Generate hash key
+    var seedText = obj.email + obj.password;
+    var keys = generateCustomerKeys(seedText);
+
+    obj.password = hashText(obj.password);
+    obj.publickey = keys.publickey;
+    obj.privatekey = keys.privatekey;
+
+    //Insert customer into DB
+    queryInsertCustomer(obj, (data, err) => {
         if (!err) {
-            console.log(data);
+            return callback(null, "Success");
         } else {
-            console.log(err);
+            return callback(err);
         }
     });
 }
 
-function SelectCustomers(){
+function SelectCustomers() {
     const query = "select * from BCCustomer;"
     queryAll(query, (data, err) => {
         if (!err) {
@@ -21,28 +40,45 @@ function SelectCustomers(){
     });
 }
 
-function SelectCustomer(custID){
-    querySelectCustomerByID(custID, (data, err) => {
+function RemoveCustomers() {
+    const query = "DELETE from BCCustomer;"
+    queryAll(query, (data, err) => {
         if (!err) {
-            console.log(data);
-            return data;
+            callback(null, "Success");
         } else {
-            throw err;
+            callback(err);
         }
     });
 }
 
-console.log(SelectCustomer(7));
-// const customer = {
-//     email: "handoko@centrica.com",
-//     password: "password",
-//     publickey: "publickey", 
-//     privatekey: "privatekey"
-// }
+var getCustomerByEmail = (custEmail, callback) => {
+    querySelectCustomerByEmail(custEmail, (data, err) => {
+        if (err) {
+            callback("Unable to get the data " + err);
+        } else {
+            console.log('error');
+            callback(null, data[0]);
+        }
+    });
+}
 
-// InsertCustomer(customer);
+// var getCustomerPromise = (custId) => {
+//     return new Promise((resolve, reject) => {
+//         querySelectCustomerByID(custID, (data, err) => {
+//             resolve(data);
+//             // if (err) {
+//             //     reject("Unable to get the data " + err);
+//             // } else {
+//             //     console.log(data);
+//             //     resolve(data);
+//             // }
+//         });
+//     }
+//     )
+// };
 
-exports.module = {
-    InsertCustomer,
-    SelectCustomer
+
+module.exports = {
+    insertCustomer,
+    getCustomerByEmail
 }
