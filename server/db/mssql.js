@@ -8,17 +8,18 @@ function queryInsertCustomer(customer, callback) {
     //when insert 
     var con = new msSqlConnecter.msSqlConnecter(dbconfig); 
     con.connect().then(function () { 
-        new con.Request("insert into BCCustomer values(@email,@password,@publickey,@privatekey)")         
+        new con.Request("insert into BCCustomer values(@email,@password,@publickey,@privatekey, @token)")         
             .addParam("email", TYPES.VarChar, customer.email) 
             .addParam("password", TYPES.VarChar, customer.password) 
             .addParam("publickey", TYPES.VarChar, customer.publickey) 
-            .addParam("privatekey", TYPES.VarChar, customer.privatekey) 
+            .addParam("privatekey", TYPES.VarChar, customer.privatekey)
+            .addParam("token", TYPES.VarChar, customer.token) 
             .onComplate(function (count) { 
                 if (callback) 
                     callback(count); 
             }) 
-            .onError(function (err) { 
-                console.log(err); 
+            .onError(function (err) {                 
+                callback(null, err);
             }) 
             .Run(); 
     }).catch(function (ex) { 

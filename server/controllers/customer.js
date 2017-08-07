@@ -1,30 +1,47 @@
+var _ = require('lodash');
 var { queryInsertCustomer, querySelectCustomerByEmail, queryAll } = require('../db/mssql');
 var {CleanJSONObject} = require('../helper/commonFunction');
 var {hashText, generateCustomerKeys} = require('../helper/ethereumHelper');
 var validator = require('validator');
+var {generateAuthToken} = require('./authenticate');
 
-var insertCustomer = (customerObject, callback) => {
-    var obj = CleanJSONObject(customerObject);    
+var insertCustomer = (req, res) => {
+    var customer = CleanJSONObject(req.body);
 
-    //verify whether the email is valid
-    if(!validator.isEmail(obj.email)){
-        return callback("Invalid email format");
+    if (!validator.isEmail(customer.email)) {
+        console.log("fail");
+        
+        res.status(400).send("Invalid email address!");
+        return;
     }
 
     //Generate hash key
-    var seedText = obj.email + obj.password;
+    var seedText = customer.email + customer.password;
     var keys = generateCustomerKeys(seedText);
+    var token = generateAuthToken(customer.email);
 
-    obj.password = hashText(obj.password);
-    obj.publickey = keys.publickey;
-    obj.privatekey = keys.privatekey;
+    customer.password = hashText(customer.password);
+    customer.publickey = keys.publickey;
+    customer.privatekey = keys.privatekey;
+    customer.token = token;
 
-    //Insert customer into DB
-    queryInsertCustomer(obj, (data, err) => {
+    queryInsertCustomer(customer, function (data, err) {
+        if (!err) {                        
+            res.header('x-auth', customer.token).status(200).send(_.pick(customer, ["email", "publickey"]));
+        } else {                        
+            res.status(500).json(err.message);
+        }
+    });
+
+}
+
+var getCustomer = (req, res) => {
+    var customerEmail = req.params.customerEmail;
+    querySelectCustomerByEmail(customerEmail, (data, err) => {
         if (!err) {
-            return callback(null, "Success");
+             res.status(200).json(data);
         } else {
-            return callback(err);
+            res.status(500).json("Unable to get the data " + err);                        
         }
     });
 }
@@ -51,34 +68,7 @@ function RemoveCustomers() {
     });
 }
 
-var getCustomerByEmail = (custEmail, callback) => {
-    querySelectCustomerByEmail(custEmail, (data, err) => {
-        if (err) {
-            callback("Unable to get the data " + err);
-        } else {
-            console.log('error');
-            callback(null, data[0]);
-        }
-    });
-}
-
-// var getCustomerPromise = (custId) => {
-//     return new Promise((resolve, reject) => {
-//         querySelectCustomerByID(custID, (data, err) => {
-//             resolve(data);
-//             // if (err) {
-//             //     reject("Unable to get the data " + err);
-//             // } else {
-//             //     console.log(data);
-//             //     resolve(data);
-//             // }
-//         });
-//     }
-//     )
-// };
-
-
 module.exports = {
     insertCustomer,
-    getCustomerByEmail
+    getCustomer
 }
