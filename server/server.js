@@ -1,33 +1,23 @@
-var {connection} = require('./db/mssql');
-var { Request } = require('tedious');
+var express = require('express');
+var bodyParser = require('body-parser');
+var { querySelectCustomerByID } = require('./db/mssql');
 
-function executeStatement() {
-    //var query = "select ContractID from Contract";
-    var query = "select username from \"User\"";
-    request = new Request(query, function(err, result) {
-      if (err) {
-        console.log(err);
-      } else {
-        //console.log(result);
-      }
+var app = express();
+const port = process.env.PORT || 3000;
+
+app.use(bodyParser.json());
+
+app.get('/customer/:customerId', (req, res) => {
+    var customerId = req.params.customerId;
+    querySelectCustomerByID(customerId, (data, err) => {
+        if (!err) {
+            res.send(data);
+        } else {
+            res.status(400).send(err);
+        }
     });
+});
 
-    request.on('row', function(columns) {
-      columns.forEach(function(column) {
-        console.log(column.value);
-      });
-    });
-
-    connection.execSql(request);
-  }
-
-
-connection.on('connect', function (err) {
-    if (!err) {
-        console.log("Successful!");
-        executeStatement();
-    } else {
-        console.log("Error : " + err);
-    }
-}
-);
+app.listen(port, () => {
+  console.log(`Started up at port ${port}`);
+});
