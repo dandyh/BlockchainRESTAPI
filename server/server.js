@@ -19,12 +19,15 @@ secureRoutes.use(authenticate);
 
 //Public sign up api
 app.post('/api/customer', customerController.insertCustomer);
+//Post user login email password
+app.post("/api/login", customerController.customerLogin);
 
 //app.get('/api/authenticate', authenticateController.authenticate);
 app.get('/api/customer/:customerEmail', customerController.getCustomer);
 secureRoutes.get('/customer/:customerEmail', customerController.getCustomer);
 
 //secureRoutes.post('/customer', customerController.insertCustomer);
+
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);

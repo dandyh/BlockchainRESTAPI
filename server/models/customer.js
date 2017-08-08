@@ -5,15 +5,15 @@ const setting = require('../../settings');
 const msSqlConnecter = require("../helper/msSqlConnecter");
 const jwt = require('jsonwebtoken');
 const { hashText, generateCustomerKeys } = require('./../helper/ethereumHelper');
-var { HashPassword } = require('../helper/commonFunction');
+var commonFunction = require('../helper/commonFunction');
 
 // Create User schema 
 var Customer = new SchemaObject({
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-    publickey: String,
-    privatekey: String,
-    token: String
+    Email: { type: String, required: true },
+    Password: { type: String, required: true },
+    PublicKey: String,
+    PrivateKey: String,
+    Token: String
 });
 
 const con = new msSqlConnecter.msSqlConnecter(setting.dbconfig);
@@ -21,33 +21,33 @@ const custTableName = setting.customersqltable;
 
 var generateAuthToken = (_email) => {
     var access = 'auth';
-    var token = jwt.sign({ email: _email, access }, setting.tokenpassword, {
+    var token = jwt.sign({ Email: _email, access }, setting.tokenpassword, {
     });
     return token;
 }
 
 function InsertCustomer(customer, callback) {
     //Generate hash key
-    var seedText = customer.email + customer.password;
+    var seedText = customer.Email + customer.Password;
     etherKeys = generateCustomerKeys(seedText);
-    customer.token = generateAuthToken(customer.email);    
-    HashPassword(customer.password, (data, err) => {        
+    customer.Token = generateAuthToken(customer.Email);    
+    commonFunction.HashPassword(customer.Password, (data, err) => {        
         if(!err){
-            customer.password = data;
+            customer.Password = data;
         } else {
             callback(null, err);
         }
     });
-    customer.publickey = etherKeys.publickey;
-    customer.privatekey = etherKeys.privatekey;
+    customer.PublicKey = etherKeys.PublicKey;
+    customer.PrivateKey = etherKeys.PrivateKey;
     //when insert     
     con.connect().then(function () {
         new con.Request("insert into " + custTableName + " values(@email,@password,@publickey,@privatekey, @token)")
-            .addParam("email", TYPES.VarChar, customer.email)
-            .addParam("password", TYPES.VarChar, customer.password)
-            .addParam("publickey", TYPES.VarChar, customer.publickey)
-            .addParam("privatekey", TYPES.VarChar, customer.privatekey)
-            .addParam("token", TYPES.VarChar, customer.token)
+            .addParam("email", TYPES.VarChar, customer.Email)
+            .addParam("password", TYPES.VarChar, customer.Password)
+            .addParam("publickey", TYPES.VarChar, customer.PublicKey)
+            .addParam("privatekey", TYPES.VarChar, customer.PrivateKey)
+            .addParam("token", TYPES.VarChar, customer.Token)
             .onComplate(function (count) {
                 if (callback)
                     callback(count);
@@ -112,6 +112,24 @@ function GetCustomerByToken(customerToken, callback) {
     });
 }
 
+function GetCustomerByCredentials(customer, callback) {
+    const query = "select * from " + custTableName + " where Email = @Email and Password = @Password";
+    con.connect().then(function () {
+        new con.Request(query)
+            .addParam("Email", TYPES.VarChar, customer.email)
+            .addParam("Password", TYPES.VarChar, customer.password)
+            .onComplate(function (count, datas) {
+                if (callback)
+                    callback(datas);
+            })
+            .onError(function (err) {
+                callback(null, err);
+            }).Run();
+    }).catch(function (ex) {
+        callback(null, ex);
+    });
+}
+
 function FindByToken(customerToken, callback) {
     try {
         decoded = jwt.verify(customerToken, setting.tokenpassword);
@@ -128,9 +146,32 @@ function FindByToken(customerToken, callback) {
     }
 }
 
+function UpdateAuthTokenAndSave (_email, callback) {
+    var token = generateAuthToken(_email);    
+    const query = "update " + custTableName + " set token = @token where email = @email";
+
+    con.connect().then(function () {         
+        new con.Request(query) 
+            .addParam("token", TYPES.VarChar, token)
+            .addParam("email", TYPES.VarChar, _email)            
+            .onComplate(function (count) { 
+                if (callback) 
+                    callback(token); 
+            }) 
+            .onError(function (err) { 
+                callback(null, err);
+            }) 
+            .Run(); 
+    }).catch(function (ex) { 
+        callback(null, err);
+    }); 
+}
+
+
 module.exports = {
     Customer,
     InsertCustomer,
     GetCustomer,
-    FindByToken
+    FindByToken,
+    UpdateAuthTokenAndSave
 }

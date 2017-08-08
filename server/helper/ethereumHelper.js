@@ -21,11 +21,11 @@ function hashText(text){
 }
 
 function generateCustomerKeys(seedText) {
-    var privateKey = hashText(seedText);
-    var publicKey = "0x" + `${EthUtil.privateToAddress(hexToBytes(privateKey.substr(2))).toString('hex')}`;
+    var PrivateKey = hashText(seedText);
+    var PublicKey = "0x" + `${EthUtil.privateToAddress(hexToBytes(PrivateKey.substr(2))).toString('hex')}`;
     return {
-        "publickey" : publicKey,
-        "privatekey": privateKey
+        "PublicKey" : PublicKey,
+        "PrivateKey": PrivateKey
     }
 }
 

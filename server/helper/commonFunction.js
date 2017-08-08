@@ -9,18 +9,32 @@ function HashPassword(password, callback) {
         console.log(salt);
         bcrypt.hash(password, salt, (err, hash) => {
             console.log(hash);
-            if(!err){
+            if (!err) {
                 callback(hash);
             } else {
                 callback(null, err);
             }
         });
     });
+}
 
+function VerifyPassword(PlainPassword, HashedPassword, callback) {
+    bcrypt.compare(PlainPassword, HashedPassword, function (err, res) {
+        if (!err) {
+            if (res === true) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        } else {
+            callback(null, err);
+        }
+    });
 }
 
 module.exports = {
     CleanJSONObject,
-    HashPassword
+    HashPassword,
+    VerifyPassword
 };
 
