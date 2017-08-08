@@ -22,6 +22,7 @@ const custTableName = setting.customersqltable;
 var generateAuthToken = (_email) => {
     var access = 'auth';
     var token = jwt.sign({ Email: _email, access }, setting.tokenpassword, {
+        expiresIn: ((60*60) + 600)//1 hour 10 minutes
     });
     return token;
 }
@@ -30,9 +31,9 @@ function InsertCustomer(customer, callback) {
     //Generate hash key
     var seedText = customer.Email + customer.Password;
     etherKeys = generateCustomerKeys(seedText);
-    customer.Token = generateAuthToken(customer.Email);    
-    commonFunction.HashPassword(customer.Password, (data, err) => {        
-        if(!err){
+    customer.Token = generateAuthToken(customer.Email);
+    commonFunction.HashPassword(customer.Password, (data, err) => {
+        if (!err) {
             customer.Password = data;
         } else {
             callback(null, err);
@@ -133,38 +134,44 @@ function GetCustomerByCredentials(customer, callback) {
 function FindByToken(customerToken, callback) {
     try {
         decoded = jwt.verify(customerToken, setting.tokenpassword);
+        console.log(decoded);
         GetCustomerByToken(customerToken, (data, err) => {
-        if(!err){
-            callback(data);
+            if (!err) {
+                callback(data);
+            } else {
+                callback(null, err);
+            }
+        });
+
+    } catch (e) {
+        if(e.message === "jwt expired"){
+            callback(null, "Token is expired");
         } else {
             callback(null, err);
         }
-    });
-
-    } catch (e) {
-        callback(null, e);
+        
     }
 }
 
-function UpdateAuthTokenAndSave (_email, callback) {
-    var token = generateAuthToken(_email);    
+function UpdateAuthTokenAndSave(_email, callback) {
+    var token = generateAuthToken(_email);
     const query = "update " + custTableName + " set token = @token where email = @email";
 
-    con.connect().then(function () {         
-        new con.Request(query) 
+    con.connect().then(function () {
+        new con.Request(query)
             .addParam("token", TYPES.VarChar, token)
-            .addParam("email", TYPES.VarChar, _email)            
-            .onComplate(function (count) { 
-                if (callback) 
-                    callback(token); 
-            }) 
-            .onError(function (err) { 
+            .addParam("email", TYPES.VarChar, _email)
+            .onComplate(function (count) {
+                if (callback)
+                    callback(token);
+            })
+            .onError(function (err) {
                 callback(null, err);
-            }) 
-            .Run(); 
-    }).catch(function (ex) { 
+            })
+            .Run();
+    }).catch(function (ex) {
         callback(null, err);
-    }); 
+    });
 }
 
 
