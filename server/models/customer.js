@@ -132,9 +132,8 @@ function GetCustomerByCredentials(customer, callback) {
 }
 
 function FindByToken(customerToken, callback) {
-    try {
-        decoded = jwt.verify(customerToken, setting.tokenpassword);
-        console.log(decoded);
+    try {        
+        decoded = jwt.verify(customerToken, setting.tokenpassword);        
         GetCustomerByToken(customerToken, (data, err) => {
             if (!err) {
                 callback(data);
@@ -146,8 +145,10 @@ function FindByToken(customerToken, callback) {
     } catch (e) {
         if(e.message === "jwt expired"){
             callback(null, "Token is expired");
+        } else if(e.message === "invalid signature"){
+            callback(null, "Token is not valid");
         } else {
-            callback(null, err);
+            callback(null, e);
         }
         
     }
