@@ -175,11 +175,30 @@ function UpdateAuthTokenAndSave(_email, callback) {
     });
 }
 
+function DeleteToken(_token, callback) {    
+    const query = "update " + custTableName + " set token = null where token=@token";
+
+    con.connect().then(function () {
+        new con.Request(query)
+            .addParam("token", TYPES.VarChar, _token)            
+            .onComplate(function (count) {
+                if (callback)
+                    callback(count);
+            })
+            .onError(function (err) {
+                callback(null, err);
+            })
+            .Run();
+    }).catch(function (ex) {
+        callback(null, err);
+    });
+}
 
 module.exports = {
     Customer,
     InsertCustomer,
     GetCustomer,
     FindByToken,
-    UpdateAuthTokenAndSave
+    UpdateAuthTokenAndSave,
+    DeleteToken
 }

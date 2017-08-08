@@ -45,6 +45,7 @@ var customerLogin = (req, res) => {
             commonFunction.VerifyPassword(body.Password, data[0].Password, function(isVerified, err) {                   
                 if(!err){
                     if(isVerified === true){ 
+                        //Generate Auth token and save it in DB
                         customerModel.UpdateAuthTokenAndSave(body.Email, (tokenGenerated, err) => {
                             if(!err){
                                 res.header('x-auth', tokenGenerated).status(200).send({
@@ -69,9 +70,22 @@ var customerLogin = (req, res) => {
     });
 }   
 
+var customerLogout = (req, res) => {
+    var token = req.header('x-auth');  
+
+    customerModel.DeleteToken(token, function (data, err) {                
+        if (!err) {
+            res.status(200).json("Success");
+        } else {
+            res.status(500).json(err.message);
+        }
+    });
+
+}
 
 module.exports = {
     insertCustomer,
     getCustomer,
-    customerLogin
+    customerLogin,
+    customerLogout
 }

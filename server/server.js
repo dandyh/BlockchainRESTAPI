@@ -17,16 +17,13 @@ app.use('/secure-api', secureRoutes);
 //Validation Middleware
 secureRoutes.use(authenticate);
 
-//Public sign up api
+//Public 
 app.post('/api/customer', customerController.insertCustomer);
-//Post user login email password
 app.post("/api/login", customerController.customerLogin);
 
-//app.get('/api/authenticate', authenticateController.authenticate);
-app.get('/api/customer/:customerEmail', customerController.getCustomer);
+//Private
 secureRoutes.get('/customer/:customerEmail', customerController.getCustomer);
-
-//secureRoutes.post('/customer', customerController.insertCustomer);
+secureRoutes.delete('/logout', customerController.customerLogout);
 
 
 app.listen(port, () => {

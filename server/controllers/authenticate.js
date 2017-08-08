@@ -9,6 +9,10 @@ var authenticate = (req, res, next) => {
     }
     Customer.FindByToken(token, (data, err) => {
         if (!err) {
+            if(data.length === 0){
+                res.status(401).json("User not found");
+                return;
+            }
             next();
         } else {
             res.status(401).json(err);
