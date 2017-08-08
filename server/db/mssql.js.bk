@@ -45,23 +45,7 @@ function querySelectCustomerByID(custId, callback) {
     }); 
 } 
 
-function querySelectCustomerByEmail(custEmail, callback) { 
-    const query = "select * from BCCustomer where Email = @Email"
-    var con = new msSqlConnecter.msSqlConnecter(dbconfig); 
-    con.connect().then(function () { 
-        new con.Request(query) 
-            .addParam("Email", TYPES.VarChar, custEmail)
-            .onComplate(function (count, datas) { 
-                if (callback) 
-                    callback(datas); 
-            }) 
-            .onError(function (err) { 
-                callback(null, err);
-            }).Run(); 
-    }).catch(function (ex) { 
-        callback(null, ex);
-    }); 
-} 
+
 
 function queryInsert(query, callback) { 
     //when insert 
@@ -84,21 +68,6 @@ function queryInsert(query, callback) {
     }); 
 } 
 
-function queryAll(query, callback) { 
-    var con = new msSqlConnecter.msSqlConnecter(dbconfig); 
-    con.connect().then(function () { 
-        new con.Request(query) 
-            .onComplate(function (count, datas) { 
-                if (callback) 
-                    callback(datas); 
-            }) 
-            .onError(function (err) { 
-                callback(null, err);
-            }).Run(); 
-    }).catch(function (ex) { 
-        callback(null, err);
-    }); 
-} 
 
 function queryUpdate(query, callback) { 
     var con = new msSqlConnecter.msSqlConnecter(dbconfig); 
@@ -138,14 +107,3 @@ function queryDelete(query, callback) {
         console.log(ex); 
     }); 
 } 
-
-module.exports = {
-    connection,
-    queryInsertCustomer,
-    querySelectCustomerByID,
-    querySelectCustomerByEmail,
-    queryInsert,
-    queryUpdate,
-    queryDelete,
-    queryAll
-}
