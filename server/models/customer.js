@@ -4,7 +4,8 @@ const { TYPES } = require('tedious');
 const setting = require('../../settings');
 const msSqlConnecter = require("../helper/msSqlConnecter");
 const jwt = require('jsonwebtoken');
-var { hashText, generateCustomerKeys } = require('./../helper/ethereumHelper');
+const { hashText, generateCustomerKeys } = require('./../helper/ethereumHelper');
+var { HashPassword } = require('../helper/commonFunction');
 
 // Create User schema 
 var Customer = new SchemaObject({
@@ -29,8 +30,14 @@ function InsertCustomer(customer, callback) {
     //Generate hash key
     var seedText = customer.email + customer.password;
     etherKeys = generateCustomerKeys(seedText);
-    customer.token = generateAuthToken(customer.email);
-    customer.password = hashText(customer.password);
+    customer.token = generateAuthToken(customer.email);    
+    HashPassword(customer.password, (data, err) => {        
+        if(!err){
+            customer.password = data;
+        } else {
+            callback(null, err);
+        }
+    });
     customer.publickey = etherKeys.publickey;
     customer.privatekey = etherKeys.privatekey;
     //when insert     
@@ -115,7 +122,7 @@ function FindByToken(customerToken, callback) {
             callback(null, err);
         }
     });
-    
+
     } catch (e) {
         callback(null, e);
     }
